@@ -68,6 +68,27 @@ export interface PredictionResponse {
   model_version: string;
 }
 
+// --- New Type for Training Initiation Response ---
+export interface TrainInitiationResponse {
+  message: string;
+  task_id: string;
+}
+
+// --- New Type for Training Status Response ---
+export interface TrainingStatus {
+  status: string; // e.g., QUEUED, STARTING, LOADING_DATA, PREPROCESSING, TRAINING_MODEL, EVALUATING_MODEL, SAVING_MODEL, ANALYZING_FEATURES, SAVING_METADATA, COMPLETED, FAILED
+  message?: string;
+  error?: string;
+  details?: string;
+  // Fields available on COMPLETION
+  version?: string;
+  metrics?: Record<string, number>;
+  classification_report?: Record<string, any>;
+  top_features?: Array<{ feature: string; importance: number }>;
+  training_duration?: string;
+  // Add other fields returned on success/failure as needed
+}
+
 // API base URL
 const API_BASE_URL = 'http://localhost:5000';
 
@@ -194,30 +215,68 @@ export async function getModelVersions(): Promise<ModelVersion[]> {
   }
 }
 
-export async function trainModel(selectedFeatures: string[]): Promise<{ version: string }> {
+export async function trainModel(selectedFeatures: string[]): Promise<TrainInitiationResponse> {
   try {
-    console.log('🔄 Training model with features:', selectedFeatures);
+    console.log('🔄 Initiating model training with features:', selectedFeatures);
     const response = await debugFetch(`${API_BASE_URL}/api/train`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ selected_features: selectedFeatures }),
     });
-    
-    if (!response.ok) {
-      console.error(`❌ Failed to train model: ${response.status} ${response.statusText}`);
-      // Return a default version instead of throwing
-      return { version: 'error' };
+
+    const responseText = await response.text(); // Read text first for better error handling
+
+    if (response.status !== 202) { // Check for 202 Accepted status
+      let errorMessage = `❌ Failed to initiate training: ${response.status} ${response.statusText}`;
+      try {
+        const errorData = JSON.parse(responseText);
+        errorMessage = errorData.error || errorData.message || errorMessage;
+      } catch {
+        // If parsing fails or no specific error message, use the basic one
+      }
+      console.error(errorMessage, responseText);
+      // Throw an error that can be caught by the calling component
+      throw new Error(errorMessage);
     }
-    
-    const data = await response.json();
-    console.log('✅ Model trained successfully:', data);
-    
-    // Ensure we return an object with a version property
-    return { version: data.version || 'unknown' };
+
+    const data: TrainInitiationResponse = JSON.parse(responseText);
+    console.log('✅ Training initiated successfully:', data);
+    return data; // Return the { message, task_id } object
+
   } catch (error) {
-    console.error('❌ Error in trainModel:', error);
-    // Return a default version instead of throwing
-    return { version: 'error' };
+    console.error('❌ Error in trainModel initiation:', error);
+    // Re-throw the error so the calling component knows it failed
+    throw error;
+  }
+}
+
+// --- New Function to Get Training Status ---
+export async function getTrainingStatus(taskId: string): Promise<TrainingStatus> {
+  try {
+    console.log(`🔄 Fetching status for training task: ${taskId}`);
+    const response = await debugFetch(`${API_BASE_URL}/api/train/status/${taskId}`);
+
+    const responseText = await response.text(); // Read text first
+
+    if (!response.ok) {
+      let errorMessage = `❌ Failed to fetch training status: ${response.status} ${response.statusText}`;
+       try {
+        const errorData = JSON.parse(responseText);
+        errorMessage = errorData.error || errorData.message || errorMessage;
+      } catch {
+        // Keep default error message
+      }
+      console.error(errorMessage, responseText);
+      throw new Error(errorMessage);
+    }
+
+    const data: TrainingStatus = JSON.parse(responseText);
+    console.log(`✅ Status for task ${taskId}:`, data);
+    return data;
+
+  } catch (error) {
+     console.error(`❌ Error fetching status for task ${taskId}:`, error);
+     throw error; // Re-throw
   }
 }
 
