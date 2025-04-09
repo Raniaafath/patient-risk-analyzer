@@ -90,8 +90,8 @@ export function PredictionResult({ prediction, className }: PredictionResultProp
   // Get all features and their importance
   const allFeatures = prediction.explanation.features.map((feature, index) => ({
     name: feature,
-    importance: prediction.explanation.feature_importance[feature] || 0,
-    shapValue: prediction.explanation.shap_values[prediction.prediction.class][index]
+    importance: prediction.explanation?.feature_importance?.[feature] ?? 0,
+    shapValue: prediction.explanation?.shap_values?.[prediction.prediction?.class]?.[index] ?? 0
   }));
 
   // Sort features by importance
