@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -67,8 +66,8 @@ export function Sidebar() {
           </div>
           {!collapsed && (
             <div className="ml-3">
-              <p className="font-medium">Dr. John Smith</p>
-              <p className="text-xs text-sidebar-foreground/80">Administrator</p>
+              <p className="font-medium">Medical Staff</p>
+              <p className="text-xs text-sidebar-foreground/80">Authorized User</p>
             </div>
           )}
         </div>

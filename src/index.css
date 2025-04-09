@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
+    --background: 210 40% 90%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
@@ -12,11 +12,11 @@
     --popover-foreground: 222.2 84% 4.9%;
     --primary: 212 96% 54%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 160 84% 39%;
+    --secondary: 142 76% 36%;
     --secondary-foreground: 222.2 47.4% 11.2%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
+    --accent: 199 89% 48%;
     --accent-foreground: 222.2 47.4% 11.2%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
@@ -24,6 +24,15 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
+    
+    --sidebar-background: 215 70% 25%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 199 89% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 199 70% 35%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 215 70% 30%;
+    --sidebar-ring: 212.7 26.8% 83.9%;
   }
 
   .dark {
@@ -35,90 +44,26 @@
     --popover-foreground: 210 40% 98%;
     --primary: 217.2 91.2% 59.8%;
     --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 160 84% 39%;
+    --secondary: 156 72% 45%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
+    --accent: 199 89% 60%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
+    
+    --sidebar-background: 215 30% 15%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 199 89% 65%;
+    --sidebar-accent: 199 70% 25%;
   }
-}
 
-@layer base {
-  * {
-    @apply border-border;
-  }
   body {
-    @apply bg-background text-foreground;
+    background-color: hsl(var(--background));
     font-feature-settings: "rlig" 1, "calt" 1;
-  }
-}
-
-@layer components {
-  .stat-card {
-    background-color: white;
-    padding: 1.5rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    border: 1px solid #f3f4f6;
-    transition: box-shadow 0.2s;
-  }
-  
-  .stat-card:hover {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  }
-
-  .stat-value {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #2563eb;
-  }
-  
-  .feature-card {
-    background-color: white;
-    padding: 1rem;
-    border-radius: 0.5rem;
-    border: 1px solid #e5e7eb;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  
-  .feature-card:hover {
-    border-color: #3b82f6;
-  }
-
-  .feature-card.selected {
-    background-color: #eff6ff;
-    border-color: #3b82f6;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  }
-
-  .medical-badge {
-    display: inline-flex;
-    align-items: center;
-    border-radius: 9999px;
-    padding: 0.125rem 0.625rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-  }
-
-  .medical-badge-low {
-    background-color: #dcfce7;
-    color: #166534;
-  }
-
-  .medical-badge-medium {
-    background-color: #fef9c3;
-    color: #854d0e;
-  }
-
-  .medical-badge-high {
-    background-color: #fee2e2;
-    color: #991b1b;
   }
 }
