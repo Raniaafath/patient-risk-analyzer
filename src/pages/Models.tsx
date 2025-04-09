@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ModelVersion, getModelVersions } from '@/services/api';
 import { ModelCard } from '@/components/Models/ModelCard';
@@ -6,6 +5,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { Search } from 'lucide-react';
+
+// Default empty model version to prevent undefined errors
+const defaultModelVersion: ModelVersion = {
+  version: '0.0.0',
+  trained_on: new Date().toISOString(),
+  feature_count: 0,
+  features: [],
+  metrics: {
+    accuracy: 0,
+    f1: 0
+  },
+  top_features: [],
+  classification_report: {},
+  saved_to: '',
+  data_size: 0,
+  training_duration: '0s',
+  selected_features: []
+};
 
 export default function Models() {
   const [models, setModels] = useState<ModelVersion[]>([]);
@@ -16,15 +33,18 @@ export default function Models() {
   useEffect(() => {
     const fetchModels = async () => {
       try {
+        console.log('🔄 Fetching model versions...');
         const data = await getModelVersions();
+        console.log('✅ Model versions received:', data);
         setModels(data);
       } catch (err) {
-        console.error('Error fetching models:', err);
+        console.error('❌ Error fetching models:', err);
         toast({
           title: "Error",
-          description: "Failed to fetch model data.",
+          description: "Failed to fetch model data. Using empty list.",
           variant: "destructive",
         });
+        // Keep using empty array instead of throwing
       } finally {
         setLoading(false);
       }
@@ -33,10 +53,11 @@ export default function Models() {
     fetchModels();
   }, [toast]);
 
+  // Safely filter models with null checks
   const filteredModels = models.filter(model => 
-    model.version.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    model.selected_features.some(feature => 
-      feature.toLowerCase().includes(searchTerm.toLowerCase())
+    model?.version?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    model?.selected_features?.some(feature => 
+      feature?.toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
 
@@ -89,7 +110,7 @@ export default function Models() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredModels.map((model) => (
-            <ModelCard key={model.version} model={model} />
+            <ModelCard key={model?.version || 'unknown'} model={model || defaultModelVersion} />
           ))}
         </div>
       )}

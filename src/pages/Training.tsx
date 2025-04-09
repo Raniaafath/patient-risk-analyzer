@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Feature, FeatureCard } from '@/components/Training/FeatureCard';
 import { trainModel } from '@/services/api';
@@ -30,6 +29,15 @@ const AVAILABLE_FEATURES: Feature[] = [
   { name: 'hyperlipidemia', type: 'categorical', description: 'History of hyperlipidemia' },
   { name: 'hyperhomocysteinemia', type: 'categorical', description: 'History of hyperhomocysteinemia' },
   { name: 'epilepsy', type: 'categorical', description: 'History of epilepsy' },
+  { name: 'respiratory_tract_infection', type: 'categorical', description: 'History of respiratory tract infection' },
+  { name: 'dizziness', type: 'categorical', description: 'History of dizziness' },
+  { name: 'trauma', type: 'categorical', description: 'History of trauma' },
+  { name: 'hemiplegia', type: 'categorical', description: 'Presence of hemiplegia' },
+  { name: 'aphasia', type: 'categorical', description: 'Presence of aphasia' },
+  { name: 'marital_status', type: 'categorical', description: 'Marital status' },
+  { name: 'occupation', type: 'categorical', description: 'Patient occupation category' },
+  { name: 'critical', type: 'categorical', description: 'Whether the patient condition is critical' },
+  { name: 'operation', type: 'categorical', description: 'Whether the patient underwent an operation' },
 ];
 
 export default function Training() {

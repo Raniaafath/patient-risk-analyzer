@@ -1,4 +1,3 @@
-
 // API service for communicating with the backend
 
 // Types
@@ -54,143 +53,208 @@ export interface PatientData {
   [key: string]: string | number;
 }
 
-// Mock data for development
-const mockDashboardData: DashboardData = {
-  total_patients: 1567,
-  numerical_stats: {
-    age: { min: 25, max: 92, count: 1567 },
-    Body_Mass_Index: { min: 17.9, max: 42.1, count: 1432 },
-    Mrs_admission: { min: 0, max: 5, count: 1567 },
-    NIHSS_admission: { min: 1, max: 28, count: 1459 }
-  },
-  categorical_stats: {
-    Gender: {
-      values: { "0": 842, "1": 725 },
-      count: 1567
+export interface PredictionResponse {
+  prediction: {
+    class: number;
+    probabilities: number[];
+    class_label: string;
+  };
+  features_used: string[];
+  explanation: {
+    feature_importance: Record<string, number>;
+    shap_values: number[][];
+    features: string[];
+  };
+  model_version: string;
+}
+
+// API base URL
+const API_BASE_URL = 'http://localhost:5000';
+
+// Debug helper function
+async function debugFetch(url: string, options?: RequestInit): Promise<Response> {
+  console.log(`🔍 API Request: ${options?.method || 'GET'} ${url}`);
+  if (options?.body) {
+    console.log('📦 Request Body:', options.body);
+  }
+  
+  try {
+    const response = await fetch(url, options);
+    console.log(`📥 Response Status: ${response.status} ${response.statusText}`);
+    
+    // Clone the response to log its body without consuming it
+    const responseClone = response.clone();
+    const responseText = await responseClone.text();
+    console.log('📄 Response Body:', responseText);
+    
+    // Return the original response
+    return response;
+  } catch (error) {
+    console.error('❌ API Error:', error);
+    throw error;
+  }
+}
+
+// Data validation helper
+function validateDashboardData(data: any): DashboardData {
+  console.log('🔍 Validating dashboard data:', data);
+  
+  // Create a safe default structure
+  const defaultData: DashboardData = {
+    total_patients: 0,
+    numerical_stats: {
+      age: { min: 0, max: 0, count: 0 },
+      Body_Mass_Index: { min: 0, max: 0, count: 0 },
+      Mrs_admission: { min: 0, max: 0, count: 0 },
+      NIHSS_admission: { min: 0, max: 0, count: 0 }
     },
-    medical_insurance: {
-      values: { "0": 421, "1": 498, "2": 648 },
-      count: 1567
+    categorical_stats: {
+      Gender: { values: {}, count: 0 },
+      medical_insurance: { values: {}, count: 0 },
+      payment_method: { values: {}, count: 0 }
     },
-    payment_method: {
-      values: { "0": 876, "1": 691 },
-      count: 1567
-    }
-  },
-  model_versions: [
-    {
-      version: "1.0.3",
-      trained_on: "2025-03-15T15:30:00Z",
-      feature_count: 7,
-      features: ["age", "Mrs_admission", "NIHSS_admission", "Gender", "hypertension", "diabetes", "atrial_fibrillation"],
-      metrics: {
-        accuracy: 0.87,
-        f1: 0.85
+    model_versions: [],
+    last_updated: new Date().toISOString()
+  };
+  
+  // If data is null or undefined, return default
+  if (!data) {
+    console.warn('⚠️ Received null or undefined data, using defaults');
+    return defaultData;
+  }
+  
+  try {
+    // Merge received data with defaults to ensure all required fields exist
+    const validatedData = {
+      ...defaultData,
+      ...data,
+      numerical_stats: {
+        ...defaultData.numerical_stats,
+        ...(data.numerical_stats || {})
       },
-      top_features: [
-        { feature: "NIHSS_admission", importance: 0.35 },
-        { feature: "age", importance: 0.22 },
-        { feature: "Mrs_admission", importance: 0.18 },
-        { feature: "atrial_fibrillation", importance: 0.12 },
-        { feature: "diabetes", importance: 0.08 }
-      ],
-      classification_report: {
-        "0": { precision: 0.88, recall: 0.86, "f1-score": 0.87, support: 278 },
-        "1": { precision: 0.85, recall: 0.87, "f1-score": 0.86, support: 221 }
+      categorical_stats: {
+        ...defaultData.categorical_stats,
+        ...(data.categorical_stats || {})
       },
-      saved_to: "models/risk_model_v103.pkl",
-      data_size: 1250,
-      training_duration: "3m 42s",
-      selected_features: ["age", "Mrs_admission", "NIHSS_admission", "Gender", "hypertension", "diabetes", "atrial_fibrillation"]
-    },
-    {
-      version: "1.0.2",
-      trained_on: "2025-02-28T09:45:00Z",
-      feature_count: 5,
-      features: ["age", "NIHSS_admission", "hypertension", "diabetes", "atrial_fibrillation"],
-      metrics: {
-        accuracy: 0.82,
-        f1: 0.8
-      },
-      top_features: [
-        { feature: "NIHSS_admission", importance: 0.41 },
-        { feature: "age", importance: 0.25 },
-        { feature: "atrial_fibrillation", importance: 0.17 },
-        { feature: "diabetes", importance: 0.1 }
-      ],
-      classification_report: {
-        "0": { precision: 0.83, recall: 0.81, "f1-score": 0.82, support: 256 },
-        "1": { precision: 0.8, recall: 0.82, "f1-score": 0.81, support: 203 }
-      },
-      saved_to: "models/risk_model_v102.pkl",
-      data_size: 1100,
-      training_duration: "2m 58s",
-      selected_features: ["age", "NIHSS_admission", "hypertension", "diabetes", "atrial_fibrillation"]
-    }
-  ],
-  last_updated: "2025-04-05T08:30:00Z"
-};
+      model_versions: Array.isArray(data.model_versions) ? data.model_versions : []
+    };
+    
+    console.log('✅ Data validation successful');
+    return validatedData;
+  } catch (error) {
+    console.error('❌ Data validation error:', error);
+    return defaultData;
+  }
+}
 
 // API Functions
 export async function getDataOverview(): Promise<DashboardData> {
-  // In a real app, this would fetch from the actual API
-  // return fetch('http://localhost:5000/data/overview').then(res => res.json());
-  
-  // For now, return mock data
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(mockDashboardData);
-    }, 600); // Simulate network delay
-  });
+  try {
+    console.log('🔄 Fetching data overview...');
+    const response = await debugFetch(`${API_BASE_URL}/api/data/overview`);
+    
+    if (!response.ok) {
+      console.error(`❌ Failed to fetch data overview: ${response.status} ${response.statusText}`);
+      // Return default data instead of throwing
+      return validateDashboardData(null);
+    }
+    
+    const data = await response.json();
+    console.log('✅ Data overview fetched successfully');
+    
+    // Validate the data before returning
+    return validateDashboardData(data);
+  } catch (error) {
+    console.error('❌ Error in getDataOverview:', error);
+    // Return default data instead of throwing
+    return validateDashboardData(null);
+  }
 }
 
 export async function getModelVersions(): Promise<ModelVersion[]> {
-  // In a real app, this would fetch from the actual API
-  // return fetch('http://localhost:5000/models/versions').then(res => res.json()).then(data => data.models);
-  
-  // For now, return mock data
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(mockDashboardData.model_versions);
-    }, 500);
-  });
+  try {
+    console.log('🔄 Fetching model versions...');
+    const response = await debugFetch(`${API_BASE_URL}/api/models/versions`);
+    
+    if (!response.ok) {
+      console.error(`❌ Failed to fetch model versions: ${response.status} ${response.statusText}`);
+      // Return empty array instead of throwing
+      return [];
+    }
+    
+    const data = await response.json();
+    console.log('✅ Model versions fetched successfully');
+    
+    // Ensure we return an array even if data.models is undefined
+    return Array.isArray(data.models) ? data.models : [];
+  } catch (error) {
+    console.error('❌ Error in getModelVersions:', error);
+    // Return empty array instead of throwing
+    return [];
+  }
 }
 
 export async function trainModel(selectedFeatures: string[]): Promise<{ version: string }> {
-  // In a real app, this would post to the actual API
-  // return fetch('http://localhost:5000/train', {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify({ selected_features: selectedFeatures }),
-  // }).then(res => res.json());
-  
-  // For now, simulate training
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ version: `1.0.${Math.floor(Math.random() * 100)}` });
-    }, 2000);
-  });
+  try {
+    console.log('🔄 Training model with features:', selectedFeatures);
+    const response = await debugFetch(`${API_BASE_URL}/api/train`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ selected_features: selectedFeatures }),
+    });
+    
+    if (!response.ok) {
+      console.error(`❌ Failed to train model: ${response.status} ${response.statusText}`);
+      // Return a default version instead of throwing
+      return { version: 'error' };
+    }
+    
+    const data = await response.json();
+    console.log('✅ Model trained successfully:', data);
+    
+    // Ensure we return an object with a version property
+    return { version: data.version || 'unknown' };
+  } catch (error) {
+    console.error('❌ Error in trainModel:', error);
+    // Return a default version instead of throwing
+    return { version: 'error' };
+  }
 }
 
-export async function getPrediction(modelVersion: string, patientData: PatientData): Promise<{ prediction: number }> {
-  // In a real app, this would post to the actual API
-  // return fetch(`http://localhost:5000/predict/${modelVersion}`, {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify(patientData),
-  // }).then(res => res.json());
-  
-  // For now, simulate prediction based on input (simplified)
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Simulate prediction logic
-      const age = parseFloat(patientData.age as string) || 0;
-      const nihss = parseFloat(patientData.NIHSS_admission as string) || 0;
+export async function getPrediction(modelVersion: string, patientData: PatientData): Promise<PredictionResponse> {
+  try {
+    console.log('🔄 Getting prediction for model version:', modelVersion);
+    console.log('📊 Patient data:', patientData);
+    
+    const response = await debugFetch(`${API_BASE_URL}/api/predict/${modelVersion}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patientData),
+    });
+    
+    if (!response.ok) {
+      // Get the response text first
+      const responseText = await response.text();
+      let errorMessage = 'Unknown error occurred';
       
-      // Simple rule: high NIHSS or older age means higher risk
-      const isHighRisk = (nihss > 15) || (age > 75 && nihss > 10);
+      try {
+        // Try to parse as JSON
+        const errorData = JSON.parse(responseText);
+        errorMessage = errorData.error || errorData.message || responseText;
+      } catch {
+        // If not JSON, use the raw text
+        errorMessage = responseText;
+      }
       
-      resolve({ prediction: isHighRisk ? 1 : 0 });
-    }, 1000);
-  });
+      throw new Error(errorMessage);
+    }
+    
+    const data = await response.json();
+    console.log('✅ Prediction received:', data);
+    
+    return data;
+  } catch (error) {
+    console.error('❌ Error in getPrediction:', error);
+    throw error;
+  }
 }

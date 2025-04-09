@@ -1,34 +1,54 @@
-
 import React, { useState, useEffect } from 'react';
-import { ModelVersion, getModelVersions } from '@/services/api';
+import { ModelVersion, getModelVersions, PredictionResponse } from '@/services/api';
 import { PredictionForm } from '@/components/Prediction/PredictionForm';
 import { PredictionResult } from '@/components/Prediction/PredictionResult';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/components/ui/use-toast';
 
+// Default empty model version to prevent undefined errors
+const defaultModelVersion: ModelVersion = {
+  version: '0.0.0',
+  trained_on: new Date().toISOString(),
+  feature_count: 0,
+  features: [],
+  metrics: {
+    accuracy: 0,
+    f1: 0
+  },
+  top_features: [],
+  classification_report: {},
+  saved_to: '',
+  data_size: 0,
+  training_duration: '0s',
+  selected_features: []
+};
+
 export default function Prediction() {
   const [modelVersions, setModelVersions] = useState<ModelVersion[]>([]);
   const [selectedVersion, setSelectedVersion] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
-  const [prediction, setPrediction] = useState<number | null>(null);
+  const [prediction, setPrediction] = useState<PredictionResponse | null>(null);
 
   useEffect(() => {
     const fetchModelVersions = async () => {
       try {
+        console.log('🔄 Fetching model versions for prediction...');
         const models = await getModelVersions();
+        console.log('✅ Model versions received:', models);
         setModelVersions(models);
         
         if (models.length > 0) {
           setSelectedVersion(models[0].version);
         }
       } catch (err) {
-        console.error('Error fetching models:', err);
+        console.error('❌ Error fetching models:', err);
         toast({
           title: "Error",
-          description: "Failed to fetch model versions.",
+          description: "Failed to fetch model versions. Using empty list.",
           variant: "destructive",
         });
+        // Keep using empty array instead of throwing
       } finally {
         setLoading(false);
       }
@@ -37,9 +57,10 @@ export default function Prediction() {
     fetchModelVersions();
   }, []);
 
-  const selectedModel = modelVersions.find(m => m.version === selectedVersion);
+  // Safely find the selected model with a fallback
+  const selectedModel = modelVersions.find(m => m?.version === selectedVersion) || defaultModelVersion;
 
-  const handlePredictionResult = (result: number) => {
+  const handlePredictionResult = (result: PredictionResponse) => {
     setPrediction(result);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -76,7 +97,7 @@ export default function Prediction() {
     <div className="space-y-8">
       <h1 className="text-2xl font-bold">Patient Risk Prediction</h1>
 
-      {prediction !== null && (
+      {prediction && (
         <PredictionResult prediction={prediction} className="mb-8" />
       )}
       
@@ -96,8 +117,8 @@ export default function Prediction() {
               </SelectTrigger>
               <SelectContent>
                 {modelVersions.map((model) => (
-                  <SelectItem key={model.version} value={model.version}>
-                    Version {model.version} ({(model.metrics.accuracy * 100).toFixed(1)}% accuracy)
+                  <SelectItem key={model?.version || 'unknown'} value={model?.version || ''}>
+                    Version {model?.version || 'unknown'} ({((model?.metrics?.accuracy || 0) * 100).toFixed(1)}% accuracy)
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -111,24 +132,24 @@ export default function Prediction() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <p className="text-xs text-gray-500">Accuracy</p>
-                <p className="font-medium">{(selectedModel.metrics.accuracy * 100).toFixed(1)}%</p>
+                <p className="font-medium">{((selectedModel?.metrics?.accuracy || 0) * 100).toFixed(1)}%</p>
               </div>
               <div>
                 <p className="text-xs text-gray-500">Trained on</p>
-                <p className="font-medium">{new Date(selectedModel.trained_on).toLocaleDateString()}</p>
+                <p className="font-medium">{new Date(selectedModel?.trained_on || new Date()).toLocaleDateString()}</p>
               </div>
               <div>
                 <p className="text-xs text-gray-500">Features</p>
-                <p className="font-medium">{selectedModel.feature_count}</p>
+                <p className="font-medium">{selectedModel?.selected_features?.length || 0}</p>
               </div>
             </div>
 
             <div className="mt-4">
               <p className="text-xs text-gray-500 mb-2">Required Features:</p>
               <div className="flex flex-wrap gap-2">
-                {selectedModel.selected_features.map(feature => (
+                {(selectedModel?.selected_features || []).map(feature => (
                   <Badge key={feature} variant="outline" className="bg-white">
-                    {feature.replace(/_/g, ' ')}
+                    {feature?.replace(/_/g, ' ') || 'Unknown'}
                   </Badge>
                 ))}
               </div>
@@ -141,7 +162,7 @@ export default function Prediction() {
             <h2 className="text-lg font-medium mb-4">Enter Patient Data</h2>
             <PredictionForm 
               modelVersion={selectedVersion}
-              features={selectedModel.selected_features}
+              features={selectedModel?.selected_features || []}
               onPredictionResult={handlePredictionResult}
             />
           </div>

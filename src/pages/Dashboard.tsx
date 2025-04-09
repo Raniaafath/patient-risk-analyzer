@@ -1,27 +1,61 @@
-
 import React, { useState, useEffect } from 'react';
-import { DashboardData, getDataOverview } from '@/services/api';
+import {
+  DashboardData,
+  getDataOverview,
+  ModelVersion,
+  getModelVersions
+} from '@/services/api';
 import { StatCard } from '@/components/Dashboard/StatCard';
 import { StatisticsCard } from '@/components/Dashboard/StatisticsCard';
 import { ModelCard } from '@/components/Models/ModelCard';
 import { Users, Scale, Activity, FileBarChart, Brain } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
+// Default data structure to prevent undefined errors
+const defaultDashboardData: DashboardData = {
+  total_patients: 0,
+  numerical_stats: {
+    age: { min: 0, max: 0, count: 0 },
+    Body_Mass_Index: { min: 0, max: 0, count: 0 },
+    Mrs_admission: { min: 0, max: 0, count: 0 },
+    NIHSS_admission: { min: 0, max: 0, count: 0 }
+  },
+  categorical_stats: {
+    Gender: { values: {}, count: 0 },
+    medical_insurance: { values: {}, count: 0 },
+    payment_method: { values: {}, count: 0 }
+  },
+  model_versions: [],
+  last_updated: new Date().toISOString()
+};
+
 export default function Dashboard() {
-  const [data, setData] = useState<DashboardData | null>(null);
+  const [data, setData] = useState<DashboardData>(defaultDashboardData);
+  const [modelDetails, setModelDetails] = useState<ModelVersion[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const { toast } = useToast();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await getDataOverview();
-        setData(response);
+        setLoading(true);
+        console.log('🔄 Fetching dashboard data...');
+        const [overviewResponse, modelsResponse] = await Promise.all([
+          getDataOverview(),
+          getModelVersions()
+        ]);
+
+        console.log('✅ Dashboard overview received:', overviewResponse);
+        console.log('✅ Detailed model versions received:', modelsResponse);
+
+        setData(overviewResponse);
+        setModelDetails(modelsResponse);
+        
       } catch (err) {
-        console.error('Error details:', err);
+        console.error('❌ Error fetching dashboard data or models:', err);
         toast({
           title: "Error",
-          description: "Failed to fetch dashboard data.",
+          description: "Failed to fetch dashboard data or model details. Displaying defaults.",
           variant: "destructive",
         });
       } finally {
@@ -43,19 +77,13 @@ export default function Dashboard() {
     );
   }
 
-  if (!data) {
-    return (
-      <div className="min-h-[70vh] flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-xl text-red-600">No data available</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Helper function to calculate percentages
   const calculatePercentage = (value: number, total: number): string => {
+    if (!total) return '0.0';
     return ((value / total) * 100).toFixed(1);
+  };
+
+  const safeGet = (obj: any, path: string, defaultValue: any = 0) => {
+    return path.split('.').reduce((acc, part) => (acc && acc[part] !== undefined ? acc[part] : defaultValue), obj);
   };
 
   return (
@@ -67,7 +95,6 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
           title="Total Patients" 
@@ -76,39 +103,37 @@ export default function Dashboard() {
         />
         <StatCard 
           title="Age Range" 
-          value={`${data.numerical_stats.age.min} - ${data.numerical_stats.age.max} years`}
+          value={`${safeGet(data, 'numerical_stats.age.min')} - ${safeGet(data, 'numerical_stats.age.max')} years`}
           icon={<Users className="h-5 w-5 text-blue-600" />}
-          trend={{ value: 2.5, isPositive: true }}
         />
         <StatCard 
           title="BMI Range" 
-          value={`${data.numerical_stats.Body_Mass_Index.min.toFixed(1)} - ${data.numerical_stats.Body_Mass_Index.max.toFixed(1)}`}
+          value={`${Number(safeGet(data, 'numerical_stats.Body_Mass_Index.min', 0)).toFixed(1)} - ${Number(safeGet(data, 'numerical_stats.Body_Mass_Index.max', 0)).toFixed(1)}`}
           icon={<Scale className="h-5 w-5 text-blue-600" />}
         />
         <StatCard 
           title="Active Models" 
-          value={data.model_versions.length}
+          value={modelDetails?.length || data.model_versions?.length || 0}
           icon={<Brain className="h-5 w-5 text-blue-600" />}
         />
       </div>
 
-      {/* Patient Demographics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
           <h2 className="text-lg font-medium mb-4">Patient Demographics</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <StatisticsCard 
               title="Gender Distribution"
-              items={Object.entries(data.categorical_stats.Gender.values).map(([gender, count]) => ({
+              items={Object.entries(safeGet(data, 'categorical_stats.Gender.values', {})).map(([gender, count]) => ({
                 label: `Gender ${gender}`,
-                value: `${count} (${calculatePercentage(count, data.categorical_stats.Gender.count)}%)`
+                value: `${count} (${calculatePercentage(count as number, safeGet(data, 'categorical_stats.Gender.count', 0))}%)`
               }))}
             />
             <StatisticsCard 
               title="Insurance Types"
-              items={Object.entries(data.categorical_stats.medical_insurance.values).map(([insurance, count]) => ({
+              items={Object.entries(safeGet(data, 'categorical_stats.medical_insurance.values', {})).map(([insurance, count]) => ({
                 label: `Type ${insurance}`,
-                value: `${count} (${calculatePercentage(count, data.categorical_stats.medical_insurance.count)}%)`
+                value: `${count} (${calculatePercentage(count as number, safeGet(data, 'categorical_stats.medical_insurance.count', 0))}%)`
               }))}
             />
           </div>
@@ -120,32 +145,38 @@ export default function Dashboard() {
             <StatisticsCard 
               title="NIHSS Scores"
               items={[
-                { label: "Range", value: `${data.numerical_stats.NIHSS_admission.min} - ${data.numerical_stats.NIHSS_admission.max}` },
-                { label: "Patients with scores", value: data.numerical_stats.NIHSS_admission.count }
+                { label: "Range", value: `${safeGet(data, 'numerical_stats.NIHSS_admission.min')} - ${safeGet(data, 'numerical_stats.NIHSS_admission.max')}` },
+                { label: "Patients with scores", value: safeGet(data, 'numerical_stats.NIHSS_admission.count') }
               ]}
             />
             <StatisticsCard 
               title="mRS Scores"
               items={[
-                { label: "Range", value: `${data.numerical_stats.Mrs_admission.min} - ${data.numerical_stats.Mrs_admission.max}` },
-                { label: "Patients with scores", value: data.numerical_stats.Mrs_admission.count }
+                { label: "Range", value: `${safeGet(data, 'numerical_stats.Mrs_admission.min')} - ${safeGet(data, 'numerical_stats.Mrs_admission.max')}` },
+                { label: "Patients with scores", value: safeGet(data, 'numerical_stats.Mrs_admission.count') }
               ]}
             />
           </div>
         </div>
       </div>
 
-      {/* Latest Models */}
       <div>
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-medium">Latest Models</h2>
+          <h2 className="text-lg font-medium">Available Models</h2>
           <a href="/models" className="text-blue-600 text-sm hover:underline">View all models</a>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {data.model_versions.slice(0, 3).map((model) => (
-            <ModelCard key={model.version} model={model} />
-          ))}
-        </div>
+        {(modelDetails && modelDetails.length > 0) ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {modelDetails.slice(0, 3).map((model: ModelVersion) => (
+              <ModelCard key={model.version} model={model} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center text-gray-500 py-6 bg-gray-50 rounded-lg">
+            <p>No models available yet. Train a model to see it here.</p>
+            <a href="/training" className="mt-2 inline-block text-blue-600 hover:underline">Go to Training</a>
+          </div>
+        )}
       </div>
     </div>
   );
