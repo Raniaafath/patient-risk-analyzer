@@ -1,0 +1,15 @@
+__pycache__/
+node_modules/
+venv/
+*.log
+*.zip
+*.pyc
+.env
+frontend/.next/
+frontend/dist/
+frontend/build/
+.git/
+.gitignore
+.vscode/
+*.md
+!README.md 
