@@ -52,9 +52,17 @@ def predict(version):
         if not os.path.exists(model_path):
             return jsonify({"error": f"Model file not found at {model_path}"}), 404
             
+        # Load and verify model
         try:
-            set_model(model_path)
-            logger.info("✅ Model loaded successfully")
+            from utils import set_model, get_model
+            model = set_model(model_path)
+            
+            # Double check the model is loaded and usable
+            if model is None or not hasattr(model, 'predict'):
+                logger.error("❌ Model initialization failed - model is None or invalid")
+                return jsonify({"error": "Failed to initialize model properly"}), 500
+                
+            logger.info("✅ Model loaded and verified successfully")
         except Exception as e:
             logger.error(f"❌ Error loading model: {str(e)}")
             return jsonify({"error": f"Failed to load model: {str(e)}"}), 500
@@ -78,8 +86,12 @@ def predict(version):
             return jsonify({"error": f"Error preprocessing data: {str(e)}"}), 500
 
         # Step 5: Make prediction
-        from backend.utils import model
         try:
+            model = get_model()
+            if model is None:
+                logger.error("❌ Model not found - was it unloaded?")
+                return jsonify({"error": "Model not available"}), 500
+                
             prediction = model.predict(processed_data)
             probabilities = model.predict_proba(processed_data)
             logger.info(f"✅ Prediction generated: {prediction[0]}")
