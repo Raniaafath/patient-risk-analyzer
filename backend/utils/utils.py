@@ -41,13 +41,23 @@ def load_model_data(model_path):
         print(f"❌ Error loading model: {str(e)}")
         raise
 
+def get_model():
+    """Get the current model instance."""
+    global model
+    return model
+
 def set_model(model_path):
     """Set the global model variables."""
     global model, scaler, feature_names, REQUIRED_FEATURES, explainer
     
     try:
         print(f"🔄 Setting up model from {model_path}")
-        model, scaler, feature_names = load_model_data(model_path)
+        loaded_model, loaded_scaler, loaded_features = load_model_data(model_path)
+        
+        # Only update globals after successful load
+        model = loaded_model
+        scaler = loaded_scaler
+        feature_names = loaded_features
         REQUIRED_FEATURES = feature_names
         
         if hasattr(model, 'predict_proba'):
@@ -58,7 +68,7 @@ def set_model(model_path):
             
         print(f"✅ Model setup complete")
         print(f"📋 Required features: {REQUIRED_FEATURES}")
-        return True
+        return model
     except Exception as e:
         print(f"❌ Error setting up model: {str(e)}")
         raise

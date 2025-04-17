@@ -42,8 +42,8 @@ Desktop.ini
 *.lock
 
 # Data/Models (optional, comment out if you want to track these)
-# backend/saved_models/
-# *.csv
+backend/saved_models/
+*.csv
 
 # React/Frontend build
 frontend/build/
