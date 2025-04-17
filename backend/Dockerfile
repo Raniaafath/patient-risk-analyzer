@@ -28,9 +28,10 @@ COPY . .
 EXPOSE 5000
 
 # Set environment variables
-ENV FLASK_APP=app.py
+ENV FLASK_APP=run.py
 ENV FLASK_ENV=production
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
 
 # Run the application with error handling
-CMD ["flask", "run", "--host=0.0.0.0"] 
+CMD ["flask", "run", "--host=0.0.0.0"]
