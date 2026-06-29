@@ -6,8 +6,7 @@ import {
   Brain,
   BarChart3,
   Database,
-  Settings,
-  LogOut,
+  Github,
   ChevronLeft,
   ChevronRight,
   UserCircle,
@@ -95,28 +94,19 @@ export function Sidebar() {
         </nav>
 
         <div className="p-4 border-t border-sidebar-border">
-          <ul className="space-y-1">
-            <li>
-              <Link
-                to="/settings"
-                className="flex items-center rounded-md px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
-                title={collapsed ? "Settings" : undefined}
-              >
-                <Settings className={cn("h-5 w-5", collapsed ? "" : "mr-3")} />
-                {!collapsed && <span>Settings</span>}
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/logout"
-                className="flex items-center rounded-md px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
-                title={collapsed ? "Logout" : undefined}
-              >
-                <LogOut className={cn("h-5 w-5", collapsed ? "" : "mr-3")} />
-                {!collapsed && <span>Logout</span>}
-              </Link>
-            </li>
-          </ul>
+          <a
+            href="https://github.com/Raniaafath/patient-risk-analyzer"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+              "flex items-center rounded-md px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors",
+              collapsed ? "justify-center" : ""
+            )}
+            title={collapsed ? "View on GitHub" : undefined}
+          >
+            <Github className={cn("h-5 w-5", collapsed ? "" : "mr-3")} />
+            {!collapsed && <span>View on GitHub</span>}
+          </a>
         </div>
       </div>
     </aside>

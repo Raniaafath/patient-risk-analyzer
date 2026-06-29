@@ -6,6 +6,9 @@ from routes.train import train_bp
 from routes.data_info import data_info_bp
 from flask_cors import CORS
 import logging
+import warnings
+
+warnings.filterwarnings("ignore", message="IPython could not be loaded")
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)

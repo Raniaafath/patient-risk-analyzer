@@ -78,7 +78,6 @@ export default function Training() {
     return () => {
       if (pollingIntervalId.current) {
         clearInterval(pollingIntervalId.current);
-        console.log("Cleared polling interval on unmount.");
       }
     };
   }, []);
@@ -87,12 +86,11 @@ export default function Training() {
     if (pollingIntervalId.current) {
       clearInterval(pollingIntervalId.current);
       pollingIntervalId.current = null;
-      console.log("Stopped polling.");
     }
   };
 
   const startPolling = (currentTaskId: string) => {
-    stopPolling(); // Ensure no duplicate intervals
+    stopPolling();
 
     pollingIntervalId.current = setInterval(async () => {
       if (!currentTaskId) {
@@ -100,7 +98,6 @@ export default function Training() {
         return;
       }
       try {
-        console.log(`Polling status for task: ${currentTaskId}`);
         const status = await getTrainingStatus(currentTaskId);
         setCurrentTrainingStatus(status);
 
@@ -126,8 +123,7 @@ export default function Training() {
         setErrorMessage(`Error fetching training status: ${error instanceof Error ? error.message : String(error)}`);
         stopPolling(); // Stop polling on error
       }
-    }, 5000); // Poll every 5 seconds
-    console.log(`Started polling for task: ${currentTaskId}`);
+    }, 5000);
   };
 
   const handleFeatureToggle = (featureName: string) => {
@@ -160,9 +156,7 @@ export default function Training() {
      setCurrentTrainingStatus({ status: 'INITIATING', message: 'Sending training request...' });
 
     try {
-      console.log("Initiating training...");
       const result: TrainInitiationResponse = await trainModel(selectedFeatures);
-      console.log("Training initiated, Task ID:", result.task_id);
       setTaskId(result.task_id);
       setCurrentTrainingStatus({ status: 'QUEUED', message: 'Training task is queued.' }); // Update status
       startPolling(result.task_id); // Start polling

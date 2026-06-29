@@ -8,7 +8,7 @@ import {
 import { StatCard } from '@/components/Dashboard/StatCard';
 import { StatisticsCard } from '@/components/Dashboard/StatisticsCard';
 import { ModelCard } from '@/components/Models/ModelCard';
-import { Users, Scale, Activity, FileBarChart, Brain } from 'lucide-react';
+import { Users, Scale, Activity, Brain } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 // Default data structure to prevent undefined errors
@@ -39,20 +39,15 @@ export default function Dashboard() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        console.log('🔄 Fetching dashboard data...');
         const [overviewResponse, modelsResponse] = await Promise.all([
           getDataOverview(),
           getModelVersions()
         ]);
 
-        console.log('✅ Dashboard overview received:', overviewResponse);
-        console.log('✅ Detailed model versions received:', modelsResponse);
-
         setData(overviewResponse);
         setModelDetails(modelsResponse);
         
       } catch (err) {
-        console.error('❌ Error fetching dashboard data or models:', err);
         toast({
           title: "Error",
           description: "Failed to fetch dashboard data or model details. Displaying defaults.",
@@ -86,6 +81,9 @@ export default function Dashboard() {
     return path.split('.').reduce((acc, part) => (acc && acc[part] !== undefined ? acc[part] : defaultValue), obj);
   };
 
+  const genderLabel: Record<string, string> = { '0': 'Female', '1': 'Male' };
+  const insuranceLabel: Record<string, string> = { '0': 'None', '1': 'Public', '2': 'Private', '3': 'Other' };
+
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
@@ -96,25 +94,29 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          title="Total Patients" 
+        <StatCard
+          title="Total Patients"
           value={data.total_patients.toLocaleString()}
           icon={<Users className="h-5 w-5 text-blue-600" />}
+          iconBg="bg-blue-50"
         />
-        <StatCard 
-          title="Age Range" 
-          value={`${safeGet(data, 'numerical_stats.age.min')} - ${safeGet(data, 'numerical_stats.age.max')} years`}
-          icon={<Users className="h-5 w-5 text-blue-600" />}
+        <StatCard
+          title="Age Range"
+          value={`${safeGet(data, 'numerical_stats.age.min')}–${safeGet(data, 'numerical_stats.age.max')} yrs`}
+          icon={<Activity className="h-5 w-5 text-emerald-600" />}
+          iconBg="bg-emerald-50"
         />
-        <StatCard 
-          title="BMI Range" 
-          value={`${Number(safeGet(data, 'numerical_stats.Body_Mass_Index.min', 0)).toFixed(1)} - ${Number(safeGet(data, 'numerical_stats.Body_Mass_Index.max', 0)).toFixed(1)}`}
-          icon={<Scale className="h-5 w-5 text-blue-600" />}
+        <StatCard
+          title="BMI Range"
+          value={`${Number(safeGet(data, 'numerical_stats.Body_Mass_Index.min', 0)).toFixed(1)}–${Number(safeGet(data, 'numerical_stats.Body_Mass_Index.max', 0)).toFixed(1)}`}
+          icon={<Scale className="h-5 w-5 text-violet-600" />}
+          iconBg="bg-violet-50"
         />
-        <StatCard 
-          title="Active Models" 
+        <StatCard
+          title="Active Models"
           value={modelDetails?.length || data.model_versions?.length || 0}
-          icon={<Brain className="h-5 w-5 text-blue-600" />}
+          icon={<Brain className="h-5 w-5 text-amber-600" />}
+          iconBg="bg-amber-50"
         />
       </div>
 
@@ -122,17 +124,17 @@ export default function Dashboard() {
         <div>
           <h2 className="text-lg font-medium mb-4">Patient Demographics</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <StatisticsCard 
+            <StatisticsCard
               title="Gender Distribution"
               items={Object.entries(safeGet(data, 'categorical_stats.Gender.values', {})).map(([gender, count]) => ({
-                label: `Gender ${gender}`,
+                label: genderLabel[gender] ?? `Gender ${gender}`,
                 value: `${count} (${calculatePercentage(count as number, safeGet(data, 'categorical_stats.Gender.count', 0))}%)`
               }))}
             />
-            <StatisticsCard 
+            <StatisticsCard
               title="Insurance Types"
               items={Object.entries(safeGet(data, 'categorical_stats.medical_insurance.values', {})).map(([insurance, count]) => ({
-                label: `Type ${insurance}`,
+                label: insuranceLabel[insurance] ?? `Type ${insurance}`,
                 value: `${count} (${calculatePercentage(count as number, safeGet(data, 'categorical_stats.medical_insurance.count', 0))}%)`
               }))}
             />

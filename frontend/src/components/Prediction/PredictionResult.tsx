@@ -12,43 +12,43 @@ export function PredictionResult({ prediction, className }: PredictionResultProp
   // Configuration for each LOS class
   const classConfig = {
     0: {
-      label: 'Extended Stay (>14 days)',
-      description: 'This patient is predicted to have an extended length of stay (more than 14 days).',
-      color: 'red',
-      icon: AlertCircle,
-      recommendations: [
-        'Develop comprehensive long-term care plan',
-        'Initiate early rehabilitation assessment',
-        'Consider social support needs and resources',
-        'Plan for potential complications management'
-      ],
-      distribution: '13.2% of cases in study'
-    },
-    1: {
-      label: 'Short Stay (1-7 days)',
-      description: 'This patient is predicted to have a short length of stay (1 to 7 days).',
+      label: 'Short Stay (≤7 days)',
+      description: 'This patient is predicted to have a short length of stay (7 days or fewer).',
       color: 'green',
       icon: CheckCircle,
       recommendations: [
         'Prepare for early discharge planning',
         'Focus on immediate post-stroke care',
-        'Schedule follow-up appointments',
+        'Schedule follow-up outpatient appointments',
         'Review home care requirements'
       ],
-      distribution: '22.8% of cases in study'
+      distribution: '22.8% of cases in dataset'
     },
-    2: {
-      label: 'Medium Stay (8-14 days)',
+    1: {
+      label: 'Medium Stay (8–14 days)',
       description: 'This patient is predicted to have a medium length of stay (8 to 14 days).',
       color: 'yellow',
       icon: Clock,
       recommendations: [
-        'Monitor recovery milestones',
+        'Monitor recovery milestones closely',
         'Assess rehabilitation progress',
         'Plan for intermediate care needs',
         'Coordinate with rehabilitation team'
       ],
-      distribution: '64% of cases in study'
+      distribution: '64% of cases in dataset'
+    },
+    2: {
+      label: 'Long Stay (>14 days)',
+      description: 'This patient is predicted to have a long length of stay (more than 14 days).',
+      color: 'red',
+      icon: AlertCircle,
+      recommendations: [
+        'Develop a comprehensive long-term care plan',
+        'Initiate early rehabilitation assessment',
+        'Consider social support needs and resources',
+        'Plan for potential complications management'
+      ],
+      distribution: '13.2% of cases in dataset'
     }
   };
 
