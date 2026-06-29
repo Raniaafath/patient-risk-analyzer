@@ -44,11 +44,11 @@ COLLECTION_NAME=MOESM1_ESM
 
 ```bash
 python run.py
-# or
-flask run
 ```
 
 The API will be available at `http://localhost:5000`.
+
+> In production the server runs under Gunicorn (`gunicorn -w 4 -b 0.0.0.0:5000 app:app`). `run.py` is for local development only.
 
 ---
 
@@ -80,6 +80,27 @@ docker-compose down -v
 
 ---
 
+## Railway Deployment
+
+The backend is deployed as a standalone service on Railway.
+
+**Settings:**
+- Root directory: `backend/`
+- Builder: Dockerfile
+- Port: `5000`
+
+**Required environment variables (set in Railway dashboard):**
+
+| Variable          | Value                                      |
+|-------------------|--------------------------------------------|
+| `MONGODB_URI`     | Railway MongoDB internal connection string |
+| `DB_NAME`         | `medical_data`                             |
+| `COLLECTION_NAME` | `MOESM1_ESM`                               |
+
+The `MONGODB_URI` internal URL is found in the Railway MongoDB service → Variables tab (`MONGO_URL`).
+
+---
+
 ## Project Structure
 
 ```
@@ -101,7 +122,7 @@ backend/
 ├── saved_data/raw/             # Place raw data files here before loading
 ├── app.py                      # Flask app factory and blueprint registration
 ├── config.py                   # MongoDB connection config
-├── run.py                      # Server entry point
+├── run.py                      # Development server entry point
 ├── requirements.txt
 ├── Dockerfile
 └── .env                        # Not committed — create manually
@@ -112,7 +133,7 @@ backend/
 ## Troubleshooting
 
 **MongoDB connection refused**
-- Make sure MongoDB is running: `mongod --dbpath /data/db`
+- Make sure MongoDB is running locally
 - Check `MONGODB_URI` in `.env` matches your MongoDB host/port
 
 **Model not found on prediction**
