@@ -89,8 +89,8 @@ export interface TrainingStatus {
   // Add other fields returned on success/failure as needed
 }
 
-// API base URL
-const API_BASE_URL = 'http://localhost:5000';
+// API base URL — set VITE_API_URL in Railway frontend variables for production
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 // Debug helper function
 async function debugFetch(url: string, options?: RequestInit): Promise<Response> {
