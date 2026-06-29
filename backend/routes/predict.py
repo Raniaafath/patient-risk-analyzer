@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 import numpy as np
-from utils import preprocess_input, explain_prediction, set_model
+from utils import preprocess_input, explain_prediction
 from models.model_metadata import ModelMetadata
 import os
 import logging

@@ -1,8 +1,7 @@
-from flask import Blueprint, jsonify, current_app
+from flask import Blueprint, jsonify
 from models import Patient
 from models.model_metadata import ModelMetadata
 from datetime import datetime
-import os
 from dotenv import load_dotenv
 
 load_dotenv()

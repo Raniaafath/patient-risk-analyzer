@@ -1,6 +1,5 @@
 import joblib
 import pandas as pd
-import numpy as np
 import os
 import shap
 
@@ -64,7 +63,7 @@ def set_model(model_path):
         else:
             print("⚠️ Model doesn't support probability predictions")
             
-        print(f"✅ Model setup complete")
+        print("✅ Model setup complete")
         print(f"📋 Required features: {REQUIRED_FEATURES}")
         return model
     except Exception as e:
