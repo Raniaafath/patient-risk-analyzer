@@ -1,13 +1,11 @@
 from flask import Flask, jsonify
 from flask_mongoengine import MongoEngine
-from mongoengine import disconnect, connect
 from config import Config
 from routes.predict import predict_bp
 from routes.train import train_bp
 from routes.data_info import data_info_bp
 from flask_cors import CORS
 import logging
-import os
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)

@@ -1,9 +1,7 @@
 from flask import Blueprint, request, jsonify
 import numpy as np
 from utils import preprocess_input, explain_prediction, set_model
-from models import Patient
 from models.model_metadata import ModelMetadata
-import joblib
 import os
 import logging
 

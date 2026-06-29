@@ -2,7 +2,6 @@ from flask import Blueprint, jsonify, request
 from sklearn.metrics import classification_report
 from models.model_metadata import ModelMetadata  # Import MongoDB schema
 from datetime import datetime, timezone
-import pandas as pd
 from data.data_loader import DataLoader
 from models.model_trainer import ModelTrainer
 from utils.feature_importance import FeatureImportanceAnalyzer
@@ -11,7 +10,6 @@ import traceback
 import logging
 import threading
 import uuid
-import time # Add time for potential sleeps if needed, or just for tracking
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)

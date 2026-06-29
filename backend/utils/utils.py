@@ -1,10 +1,8 @@
 import joblib
 import pandas as pd
 import numpy as np
-from config import Config
 import os
 import shap
-from models import Patient
 
 
 # Initialize global variables
