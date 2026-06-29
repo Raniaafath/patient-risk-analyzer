@@ -13,11 +13,6 @@ data_info_bp = Blueprint("data_info", __name__)
 def get_data_overview():
     """Get overview of the data in MongoDB."""
     try:
-        # Debug: Print MongoDB connection info
-        print(f"MongoDB URI: {os.getenv('MONGODB_URI')}")
-        print(f"DB Name: {os.getenv('DB_NAME')}")
-        print(f"Collection Name: {os.getenv('COLLECTION_NAME')}")
-        
         # Get total number of patients
         try:
             total_patients = Patient.objects.count()

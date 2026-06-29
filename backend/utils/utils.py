@@ -105,7 +105,7 @@ def preprocess_input(data, selected_features=None):
         # Validation rules
         validation_rules = {
             'Body_Mass_Index': {'min': 15, 'max': 40},
-            'age': {'min': 1, 'max': 199},
+            'age': {'min': 18, 'max': 100},
             'Mrs_admission': {'min': 0, 'max': 5},
             'NIHSS_admission': {'min': 0, 'max': 42},
             'Gender': {'values': ['Male', 'Female', 1, 2]},
@@ -142,21 +142,21 @@ def preprocess_input(data, selected_features=None):
         print(f"❌ Preprocessing error: {str(e)}")
         raise
 
-def explain_prediction(processed_df):
+def explain_prediction(processed_df, predicted_class=0):
     """Generate SHAP explanation for the prediction."""
     try:
         if explainer is None:
             raise ValueError("SHAP explainer not initialized")
-            
+
         print("🔄 Generating prediction explanation")
-        
-        # Get SHAP values
+
+        # Get SHAP values — returns a list of arrays for multiclass (one per class)
         shap_values = explainer.shap_values(processed_df)
-        
-        # Handle multiple outputs (e.g., for multi-class problems)
+
+        # For multiclass, pick the array corresponding to the predicted class
         if isinstance(shap_values, list):
-            shap_values = shap_values[0]
-        
+            shap_values = shap_values[predicted_class]
+
         # Calculate feature importance
         feature_importance = {}
         for i, feature in enumerate(processed_df.columns):

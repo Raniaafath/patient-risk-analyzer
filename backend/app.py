@@ -63,17 +63,6 @@ def init_db():
             logger.error(f"Failed to connect to MongoDB: {str(e)}")
             raise
 
-def init_model():
-    try:
-        model_version = "model_20250416_212932"  # Latest model version
-        model_path = os.path.join(os.path.dirname(__file__), 'saved_models', model_version, 'best_xgboost_model.pkl')
-        from utils import set_model
-        set_model(model_path)
-        logger.info(f"✅ Model initialized successfully from {model_path}")
-    except Exception as e:
-        logger.error(f"❌ Error initializing model: {str(e)}")
-        raise
-
 if __name__ == "__main__":
     init_db()
-    app.run(debug=True)
+    app.run(debug=False)

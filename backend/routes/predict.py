@@ -99,9 +99,9 @@ def predict(version):
             logger.error(f"❌ Prediction error: {str(e)}")
             return jsonify({"error": f"Error making prediction: {str(e)}"}), 500
 
-        # Step 6: Generate explanation
+        # Step 6: Generate explanation for the predicted class
         try:
-            explanation = explain_prediction(processed_data)
+            explanation = explain_prediction(processed_data, predicted_class=int(prediction[0]))
             logger.info("✅ Explanation generated")
         except Exception as e:
             logger.error(f"❌ Explanation error: {str(e)}")

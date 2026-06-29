@@ -17,9 +17,8 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Copy requirements first to leverage Docker cache
 COPY requirements.txt .
 
-# Install Python dependencies with specific versions
-RUN pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir Flask==2.0.1 Flask-MongoEngine==1.0.0
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application
 COPY . .
@@ -33,5 +32,5 @@ ENV FLASK_ENV=production
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
 
-# Run the application with error handling
-CMD ["flask", "run", "--host=0.0.0.0"]
+# Run with Gunicorn (4 workers, production-ready)
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "--timeout", "120", "app:app"]
