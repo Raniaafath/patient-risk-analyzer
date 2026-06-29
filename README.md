@@ -1,195 +1,156 @@
 # Patient Risk Analyzer
 
-A full-stack web application that predicts the Length of Stay (LOS) for ischemic stroke patients using XGBoost machine learning model, with MongoDB integration and SHAP explanations.
+A full-stack web application that predicts the **Length of Stay (LOS)** for ischemic stroke patients using an XGBoost classifier, with MongoDB integration and SHAP-based explanations.
+
+---
+
+## Tech Stack
+
+| Layer     | Technology                                      |
+|-----------|-------------------------------------------------|
+| Backend   | Python 3.9+, Flask, MongoEngine, XGBoost, SHAP |
+| Frontend  | React 18, TypeScript, Vite, Tailwind CSS        |
+| Database  | MongoDB                                         |
+| Deploy    | Docker + docker-compose                         |
+
+---
 
 ## Project Structure
 
 ```
 patient-risk-analyzer/
-├── backend/                  # Python/Flask backend
-│   ├── app/                 # Core application code
-│   │   ├── routes/          # API endpoints
-│   │   ├── models/          # Database models
-│   │   └── utils/           # Utility functions
-│   ├── saved_models/        # Trained ML models
-│   ├── saved_data/         # Data storage
+├── backend/
+│   ├── data/               # Data loading and preprocessing
+│   ├── models/             # MongoDB models and ML model trainer
+│   ├── routes/             # API blueprints (predict, train, data_info)
+│   ├── utils/              # Feature importance and shared utilities
+│   ├── saved_models/       # Trained models (auto-created on training)
+│   ├── saved_data/         # Raw data storage
 │   ├── docs/               # Backend documentation
-│   ├── config.py           # Configuration settings
-│   ├── app.py              # Main Flask application
+│   ├── app.py              # Flask application entry point
+│   ├── config.py           # MongoDB configuration
+│   ├── run.py              # Server runner
 │   ├── requirements.txt    # Python dependencies
-│   └── .env                # Backend environment variables
+│   ├── Dockerfile
+│   └── .env                # Environment variables (not committed)
 │
-├── frontend/                # React/TypeScript frontend
-│   ├── src/                # Frontend source code
+├── frontend/
+│   ├── src/
 │   │   ├── components/     # Reusable UI components
-│   │   ├── pages/         # Page components
-│   │   ├── services/      # API service calls
-│   │   ├── hooks/         # Custom React hooks
-│   │   ├── utils/         # Frontend utilities
-│   │   ├── App.tsx        # Main App component
-│   │   └── main.tsx       # Entry point
-│   ├── public/            # Static assets
-│   ├── package.json       # Node.js dependencies
-│   ├── tsconfig.json      # TypeScript configuration
-│   ├── vite.config.ts     # Vite configuration
-│   └── .env               # Frontend environment variables
+│   │   ├── pages/          # Dashboard, Prediction, Training, Models
+│   │   ├── services/       # API calls
+│   │   └── hooks/          # Custom React hooks
+│   ├── package.json
+│   ├── vite.config.ts
+│   ├── tsconfig.app.json
+│   └── Dockerfile
 │
-├── docker/                 # Docker configuration
-│   ├── backend/           # Backend Dockerfile
-│   └── frontend/          # Frontend Dockerfile
-│
-├── docker-compose.yml      # Docker services configuration
-├── .gitignore             # Git ignore rules
-└── README.md              # Project documentation
+├── docker-compose.yml
+└── .gitignore
 ```
+
+---
 
 ## Features
 
+- **Prediction** — Classify a patient's LOS into 3 classes (short / medium / long stay) using a versioned XGBoost model
+- **SHAP explanations** — Per-prediction feature importance via SHAP values
+- **Async training** — Trigger model training from the UI; track progress by task ID
+- **Model versioning** — Each trained model is saved with a timestamp-based version (`model_YYYYMMDD_HHMMSS`) and its metadata stored in MongoDB
+- **Data overview** — Dashboard with dataset statistics and feature distributions
+
+---
+
+## Setup
+
+### Prerequisites
+- Python 3.9+
+- Node.js 18+
+- MongoDB 4.4+ (or use Docker)
+
+---
+
 ### Backend
-- Flask web application with RESTful API
-- MongoDB database integration
-- XGBoost machine learning model for LOS prediction
-- SHAP (SHapley Additive exPlanations) for model interpretability
-- Data preprocessing and validation
-- Comprehensive error handling and logging
 
-### Frontend
-- React with TypeScript
-- Modern UI with Tailwind CSS
-- Real-time data visualization
-- Responsive design
-- Form validation
-
-## Installation
-
-### Backend Setup
-
-1. Navigate to the backend directory:
 ```bash
 cd backend
-```
-
-2. Create and activate virtual environment:
-```bash
 python -m venv venv
-.\venv\Scripts\activate  # On Windows
-source venv/bin/activate  # On Linux/Mac
-```
-
-3. Install dependencies:
-```bash
+source venv/bin/activate      # Windows: .\venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. Set up environment variables:
-Create a `.env` file in the backend directory with the following variables:
-```
-FLASK_APP=app.py
-FLASK_ENV=development
-MONGODB_URI=your_mongodb_uri
-MONGODB_DB=your_database_name
+Create a `.env` file in `backend/`:
+```env
+MONGODB_URI=mongodb://localhost:27017/medical_data
+DB_NAME=medical_data
+COLLECTION_NAME=MOESM1_ESM
 ```
 
-### Frontend Setup
-
-1. Navigate to the frontend directory:
+Start the server:
 ```bash
-cd frontend
-```
-
-2. Install dependencies:
-```bash
-npm install
+python run.py
 # or
-yarn install
-```
-
-3. Set up environment variables:
-Create a `.env` file in the frontend directory with the following variables:
-```
-VITE_API_URL=http://localhost:5000
-```
-
-## Usage
-
-### Development
-
-1. Start the backend server:
-```bash
-cd backend
 flask run
 ```
 
-2. Start the frontend development server:
+Backend runs at `http://localhost:5000`.
+
+---
+
+### Frontend
+
 ```bash
 cd frontend
+npm install
 npm run dev
-# or
-yarn dev
 ```
 
-3. Access the application:
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:5000
+Frontend runs at `http://localhost:5173`.
 
-### Production
+---
 
-1. Build the Docker containers:
+### Docker (full stack)
+
 ```bash
-docker-compose build
+docker-compose up --build
 ```
 
-2. Start the containers:
-```bash
-docker-compose up -d
-```
+| Service  | URL                    |
+|----------|------------------------|
+| Frontend | http://localhost:80    |
+| Backend  | http://localhost:5000  |
+| MongoDB  | localhost:27017        |
+
+---
 
 ## API Endpoints
 
-- `/predict` - POST endpoint for making predictions
-  - Input: JSON containing patient data
-  - Output: Prediction and SHAP explanation
+| Method | Endpoint                         | Description                        |
+|--------|----------------------------------|------------------------------------|
+| GET    | `/health`                        | Health check                       |
+| POST   | `/api/predict/<version>`         | Predict LOS for a patient          |
+| POST   | `/api/train`                     | Start background model training    |
+| GET    | `/api/train/status/<task_id>`    | Poll training task status          |
+| GET    | `/api/models/versions`           | List all trained model versions    |
+| GET    | `/api/data/overview`             | Dataset statistics                 |
+| GET    | `/api/data/features`             | Feature descriptions and validation|
+| GET    | `/api/data/models`               | Model metadata summary             |
 
-- `/train` - POST endpoint for model training
-  - Input: Training data and parameters
-  - Output: Training metrics and model performance
+Full endpoint documentation: [backend/docs/API.md](backend/docs/API.md)
 
-- `/data_info` - GET endpoint for data statistics
-  - Output: Data distributions and model performance metrics
+---
 
-## Model Features
+## Model
 
-The model uses the following features:
-- Medical insurance
-- Payment method
-- Body Mass Index (BMI)
-- Medical conditions (hypertension, diabetes, etc.)
-- Admission scores (mRS, NIHSS)
-- Demographic information (age, gender, etc.)
-- Clinical indicators (critical status, operation)
+- **Algorithm**: XGBoost multiclass classifier
+- **Target**: LOS class — `0` (short stay), `1` (medium stay), `2` (long stay)
+- **Explainability**: SHAP values per prediction
+- **Model files**: saved as `.pkl` under `backend/saved_models/<version>/best_xgboost_model.pkl`
 
-## Data Validation
+See [backend/docs/MODELS.md](backend/docs/MODELS.md) for details.
 
-The system includes validation for:
-- BMI (15-40)
-- Age (18-100)
-- mRS score (0-5)
-- NIHSS score (0-42)
-
-## Documentation
-
-- [Backend API Documentation](backend/docs/API.md)
-- [Backend Setup Guide](backend/docs/SETUP.md)
-- [Model Documentation](backend/docs/MODELS.md)
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a new Pull Request
+---
 
 ## License
 
-[Add your license information here]
+[Add your license here]

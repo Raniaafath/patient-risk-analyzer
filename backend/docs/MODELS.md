@@ -1,162 +1,112 @@
-# Machine Learning Models Documentation
+# Model Documentation
 
 ## Overview
-The Patient Risk Analyzer uses machine learning models to predict patient risk based on various medical and demographic features. This document describes the models, their architecture, and usage.
 
-## Model Architecture
+The Patient Risk Analyzer uses an **XGBoost multiclass classifier** to predict the Length of Stay (LOS) category for ischemic stroke patients. Each prediction is accompanied by SHAP-based explanations for interpretability.
 
-### 1. Risk Prediction Model (XGBoost)
-- **Type**: Gradient Boosting
-- **Framework**: XGBoost
-- **Version**: 1.7.0
-- **Purpose**: Predict patient risk level
+---
 
-#### Features
-1. **Demographic Features**
-   - Age (continuous)
-   - Gender (categorical)
-   - BMI (continuous)
+## Target Variable
 
-2. **Medical History**
-   - Hypertension (binary)
-   - Diabetes (binary)
-   - Heart Disease (binary)
-   - Smoking Status (categorical)
+**LOS** (Length of Stay) is classified into 3 categories:
 
-3. **Clinical Indicators**
-   - mRS Score (0-5)
-   - NIHSS Score (0-42)
+| Class | Label       | Meaning     |
+|-------|-------------|-------------|
+| 0     | LOS Class 0 | Short stay  |
+| 1     | LOS Class 1 | Medium stay |
+| 2     | LOS Class 2 | Long stay   |
 
-#### Model Parameters
-```python
-{
-    'max_depth': 6,
-    'learning_rate': 0.01,
-    'n_estimators': 100,
-    'objective': 'binary:logistic',
-    'eval_metric': 'logloss'
-}
+---
+
+## Input Features
+
+The model is trained on a configurable subset of the following features from the `MOESM1_ESM` collection:
+
+### Numerical
+| Feature           | Description                        | Validation   | Unit    |
+|-------------------|------------------------------------|--------------|---------|
+| `age`             | Patient age                        | 18 – 100     | years   |
+| `Body_Mass_Index` | Body Mass Index                    | 15 – 40      | kg/m²   |
+| `Mrs_admission`   | Modified Rankin Scale at admission | 0 – 5        | score   |
+| `NIHSS_admission` | NIH Stroke Scale at admission      | 0 – 42       | score   |
+
+### Categorical (encoded as integers)
+| Feature             | Description              |
+|---------------------|--------------------------|
+| `Gender`            | Patient gender           |
+| `medical_insurance` | Insurance type           |
+| `payment_method`    | Payment method           |
+| `marital_status`    | Marital status           |
+| `occupation`        | Occupation               |
+
+### Binary (0 / 1)
+| Feature                   | Description                        |
+|---------------------------|------------------------------------|
+| `hypertension`            | Hypertension history               |
+| `diabetes`                | Diabetes history                   |
+| `coronary_heart_disease`  | Coronary heart disease             |
+| `atrial_fibrillation`     | Atrial fibrillation                |
+| `hyperlipidemia`          | Hyperlipidemia                     |
+| `hyperhomocysteinemia`    | Hyperhomocysteinemia               |
+| `transient_ischemic_attack` | TIA history                      |
+| `peripheral_arterial_disease` | PAD history                    |
+| `epilepsy`                | Epilepsy                           |
+| `respiratory_tract_infection` | RTI                            |
+| `hemiplegia`              | Hemiplegia                         |
+| `aphasia`                 | Aphasia                            |
+| `cognitive_disorder`      | Cognitive disorder                 |
+| `dizziness`               | Dizziness                          |
+| `trauma`                  | Trauma                             |
+| `Postoperative_sequelae`  | Postoperative sequelae             |
+| `critical`                | Critical status on admission       |
+| `operation`               | Underwent operation                |
+
+---
+
+## Training Pipeline
+
+1. **Feature selection** — caller provides a list of features via the API
+2. **Data loading** — records fetched from MongoDB (`MOESM1_ESM` collection)
+3. **Preprocessing** — encoding, scaling
+4. **Train/test split** — 80/20
+5. **XGBoost training** — with Bayesian hyperparameter optimization (`scikit-optimize`)
+6. **Evaluation** — accuracy, F1, full classification report on the test set
+7. **SHAP analysis** — global feature importance computed and saved
+8. **Artifact saving** — model `.pkl`, split CSVs, plots, and metadata all saved under a versioned directory
+
+---
+
+## Model Versioning
+
+Each training run produces a new version named by timestamp:
+
+```
+backend/saved_models/
+└── model_20250416_212932/
+    ├── best_xgboost_model.pkl   # Serialized XGBoost model
+    ├── X_train.csv
+    ├── X_test.csv
+    ├── y_train.csv
+    └── y_test.csv
 ```
 
-#### Performance Metrics
-- Accuracy: 0.85
-- Precision: 0.83
-- Recall: 0.86
-- AUC-ROC: 0.89
+Version metadata (metrics, selected features, training duration, etc.) is stored in MongoDB under the `ModelMetadata` collection and is queryable via `GET /api/models/versions`.
 
-## Model Training
+---
 
-### Data Preprocessing
-1. **Feature Engineering**
-   - Age normalization
-   - BMI categorization
-   - One-hot encoding for categorical variables
+## Prediction Pipeline
 
-2. **Data Validation**
-   - Range checks for numerical features
-   - Category validation for categorical features
-   - Missing value handling
+1. Fetch model metadata for the requested version from MongoDB
+2. Load `best_xgboost_model.pkl` from disk
+3. Validate and preprocess input features using the same pipeline as training
+4. Call `model.predict()` and `model.predict_proba()` to get class and probability
+5. Generate SHAP explanation for the prediction
+6. Return class, probabilities, feature importance, and SHAP values
 
-### Training Process
-1. **Data Split**
-   - Training: 70%
-   - Validation: 15%
-   - Test: 15%
+---
 
-2. **Hyperparameter Tuning**
-   - Grid search for optimal parameters
-   - Cross-validation (5-fold)
-   - Early stopping
+## Explainability (SHAP)
 
-## Model Deployment
+Every prediction includes a SHAP explanation showing which features pushed the prediction toward or away from each LOS class. This allows clinicians to understand why the model made a specific prediction.
 
-### Model Storage
-- Location: `saved_models/`
-- Format: `.joblib` files
-- Versioning: Semantic versioning
-
-### Model Loading
-```python
-import joblib
-
-def load_model(model_path):
-    return joblib.load(model_path)
-```
-
-### Prediction Pipeline
-1. Data validation
-2. Feature preprocessing
-3. Model prediction
-4. Risk level calculation
-5. SHAP explanation generation
-
-## Model Monitoring
-
-### Performance Metrics
-- Daily accuracy tracking
-- Feature importance monitoring
-- Prediction distribution analysis
-
-### Drift Detection
-- Feature distribution monitoring
-- Prediction drift detection
-- Data quality checks
-
-## Model Updates
-
-### Retraining Schedule
-- Weekly model retraining
-- Monthly full retraining
-- On-demand retraining
-
-### Version Control
-- Git LFS for model files
-- Version tagging
-- Rollback procedures
-
-## SHAP Explanations
-
-### Feature Importance
-- Global feature importance
-- Local feature importance
-- Interaction effects
-
-### Visualization
-- Summary plots
-- Dependence plots
-- Force plots
-
-## Best Practices
-
-### Data Quality
-- Regular data validation
-- Outlier detection
-- Missing value handling
-
-### Model Maintenance
-- Regular performance monitoring
-- Feature importance tracking
-- Model version management
-
-### Security
-- Input validation
-- Output sanitization
-- Access control
-
-## Troubleshooting
-
-### Common Issues
-1. **Model Loading Errors**
-   - Check model file integrity
-   - Verify model version compatibility
-   - Ensure sufficient memory
-
-2. **Prediction Errors**
-   - Validate input data
-   - Check feature preprocessing
-   - Monitor model performance
-
-3. **Performance Issues**
-   - Check resource usage
-   - Optimize feature computation
-   - Monitor prediction latency 
+Global feature importance plots are also generated during training and saved alongside the model artifacts.

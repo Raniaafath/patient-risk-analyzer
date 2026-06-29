@@ -1,134 +1,128 @@
 # Backend Setup Guide
 
 ## Prerequisites
-- Python 3.9 or higher
-- pip (Python package manager)
-- MongoDB 4.4 or higher
-- Virtual environment (recommended)
 
-## Installation
+- Python 3.9+
+- pip
+- MongoDB 4.4+ running locally (or use Docker)
 
-1. **Clone the repository**
+---
+
+## Local Development
+
+### 1. Create and activate a virtual environment
+
 ```bash
-git clone <repository-url>
-cd patient-risk-analyzer/backend
-```
+cd backend
 
-2. **Create and activate virtual environment**
-```bash
+# Linux / Mac
+python3 -m venv venv
+source venv/bin/activate
+
 # Windows
 python -m venv venv
 .\venv\Scripts\activate
-
-# Linux/Mac
-python3 -m venv venv
-source venv/bin/activate
 ```
 
-3. **Install dependencies**
+### 2. Install dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
-4. **Configure environment variables**
-Create a `.env` file in the backend directory with the following variables:
+### 3. Configure environment variables
+
+Create a `.env` file in the `backend/` directory:
+
 ```env
-FLASK_APP=app.py
-FLASK_ENV=development
-MONGODB_URI=mongodb://localhost:27017/
-MONGODB_DB=patient_risk_db
+MONGODB_URI=mongodb://localhost:27017/medical_data
+DB_NAME=medical_data
+COLLECTION_NAME=MOESM1_ESM
 ```
 
-5. **Initialize the database**
-```bash
-python init_db.py
-```
+### 4. Start the server
 
-## Running the Application
-
-1. **Start the Flask server**
 ```bash
+python run.py
+# or
 flask run
 ```
-The server will start at `http://localhost:5000`
 
-2. **Run in development mode**
+The API will be available at `http://localhost:5000`.
+
+---
+
+## Docker (full stack)
+
+From the project root:
+
 ```bash
-flask run --debug
+docker-compose up --build
 ```
+
+This starts three services:
+
+| Service  | Port  | Notes                          |
+|----------|-------|--------------------------------|
+| backend  | 5000  | Flask + Gunicorn               |
+| frontend | 80    | Nginx serving the React build  |
+| mongodb  | 27017 | Mongo with a persistent volume |
+
+To stop:
+```bash
+docker-compose down
+```
+
+To also remove data volumes:
+```bash
+docker-compose down -v
+```
+
+---
 
 ## Project Structure
+
 ```
 backend/
-├── app/
-│   ├── routes/          # API endpoints
-│   ├── models/          # Database models
-│   └── utils/           # Utility functions
-├── saved_models/        # Trained ML models
-├── saved_data/         # Data storage
-├── config.py           # Configuration settings
-├── requirements.txt    # Python dependencies
-└── .env               # Environment variables
+├── data/
+│   └── data_loader.py          # MongoDB loading, preprocessing, train/test split
+├── models/
+│   ├── models.py               # Patient MongoEngine document schema
+│   ├── model_trainer.py        # XGBoost training and evaluation
+│   └── model_metadata.py       # ModelMetadata MongoEngine document schema
+├── routes/
+│   ├── predict.py              # POST /api/predict/<version>
+│   ├── train.py                # POST /api/train, GET /api/train/status/<id>, GET /api/models/versions
+│   └── data_info.py            # GET /api/data/overview, /features, /models
+├── utils/
+│   ├── utils.py                # Preprocessing helpers, SHAP explanation
+│   └── feature_importance.py   # Feature importance analysis
+├── saved_models/               # Auto-created; each training run creates a timestamped subdirectory
+├── saved_data/raw/             # Place raw data files here before loading
+├── app.py                      # Flask app factory and blueprint registration
+├── config.py                   # MongoDB connection config
+├── run.py                      # Server entry point
+├── requirements.txt
+├── Dockerfile
+└── .env                        # Not committed — create manually
 ```
 
-## Development Guidelines
-
-1. **Code Style**
-- Follow PEP 8 guidelines
-- Use type hints
-- Document functions and classes
-- Write unit tests for new features
-
-2. **Git Workflow**
-- Create feature branches
-- Write descriptive commit messages
-- Submit pull requests for review
-
-3. **Testing**
-```bash
-# Run all tests
-pytest
-
-# Run specific test file
-pytest tests/test_predict.py
-
-# Run with coverage
-pytest --cov=app tests/
-```
+---
 
 ## Troubleshooting
 
-1. **MongoDB Connection Issues**
-- Verify MongoDB is running
-- Check connection string in .env
-- Ensure network access is allowed
+**MongoDB connection refused**
+- Make sure MongoDB is running: `mongod --dbpath /data/db`
+- Check `MONGODB_URI` in `.env` matches your MongoDB host/port
 
-2. **Model Loading Errors**
-- Verify model files exist in saved_models/
-- Check model version compatibility
-- Ensure sufficient memory
+**Model not found on prediction**
+- At least one training run must complete before predictions work
+- Check `backend/saved_models/` for a timestamped directory containing `best_xgboost_model.pkl`
+- Verify the model version exists in the `ModelMetadata` collection in MongoDB
 
-3. **Common Issues**
-- Port already in use: Change port in .env
-- Module not found: Check virtual environment
-- Database errors: Check MongoDB status
+**Port already in use**
+- Kill the process using the port or change the port in `run.py`
 
-## Production Deployment
-
-1. **Environment Setup**
-- Use production-grade WSGI server (Gunicorn)
-- Set up proper logging
-- Configure SSL/TLS
-- Set up monitoring
-
-2. **Security Considerations**
-- Enable authentication
-- Use HTTPS
-- Set up rate limiting
-- Regular security updates
-
-3. **Performance Optimization**
-- Enable caching
-- Optimize database queries
-- Use connection pooling
-- Monitor resource usage 
+**Missing module errors**
+- Make sure the virtual environment is activated
+- Re-run `pip install -r requirements.txt`
