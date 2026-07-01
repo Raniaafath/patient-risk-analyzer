@@ -16,6 +16,7 @@ build/
 .Python
 env/
 venv/
+.venv/
 ENV/
 env.bak/
 *.pyo

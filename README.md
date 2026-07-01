@@ -155,8 +155,9 @@ Any push to `main` triggers a redeploy automatically.
 GitHub Actions runs on every push and pull request to `main`:
 
 1. **backend-lint** — flake8 (F-codes only) on Python source
-2. **frontend-build** — `npm ci && npm run build`
-3. **docker-build** — builds both Docker images (no push)
+2. **backend-test** — pytest (8 unit tests, no DB required)
+3. **frontend-build** — `npm ci && npm run build`
+4. **docker-build** — builds both Docker images (no push), runs after all above
 
 See [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
